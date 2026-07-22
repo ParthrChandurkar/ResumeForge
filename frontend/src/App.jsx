@@ -6,6 +6,7 @@ import ResultsPanel from './components/ResultsPanel'
 import HistoryPanel from './components/HistoryPanel'
 import Login from './components/Login'
 import TemplateSetup from './components/TemplateSetup'
+import ThemeToggle from './components/ThemeToggle'
 
 const blankForm = { company_name: '', role_title: '', location: '', job_id: '', hiring_manager: '', template_id: '', job_description: '', extra_instructions: '' }
 
@@ -19,6 +20,13 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [theme, setTheme] = useState(() => localStorage.getItem('resumeforge_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark')
+    localStorage.setItem('resumeforge_theme', theme)
+  }, [theme])
+  const toggleTheme = () => setTheme(current => current === 'dark' ? 'light' : 'dark')
 
   const loadWorkspace = useCallback(async (currentUser) => {
     if (!currentUser) return
@@ -56,11 +64,11 @@ export default function App() {
   const newTailor = () => { const resumes=templates.filter(item=>item.kind==='resume'); setForm({...blankForm,template_id:resumes[0]?.id||''}); setResult(null); setView('new'); setError(''); setSidebarOpen(false) }
   const deleteRun = async (id) => { if (!window.confirm('Delete this tailored document set from your private history?')) return; try { await api.deleteRun(id); setHistory(items => items.filter(item => item.id !== id)); if (result?.id === id) newTailor() } catch (err) { setError(err.message) } }
 
-  if (user === undefined) return <div className="grid min-h-screen place-items-center bg-slate-950 text-white"><Sparkles className="animate-pulse" size={30}/></div>
-  if (!user) return <Login onLogin={onLogin}/>
-  if (!user.setup_complete) return <TemplateSetup user={user} templates={templates} onComplete={refreshUser} onLogout={logout}/>
+  if (user === undefined) return <><ThemeToggle theme={theme} onToggle={toggleTheme}/><div className="grid min-h-screen place-items-center bg-slate-950 text-white"><Sparkles className="animate-pulse" size={30}/></div></>
+  if (!user) return <><ThemeToggle theme={theme} onToggle={toggleTheme}/><Login onLogin={onLogin}/></>
+  if (!user.setup_complete) return <><ThemeToggle theme={theme} onToggle={toggleTheme}/><TemplateSetup user={user} templates={templates} onComplete={refreshUser} onLogout={logout}/></>
 
-  return <div className="min-h-screen bg-[#f5f6f8] text-slate-950">
+  return <><ThemeToggle theme={theme} onToggle={toggleTheme}/><div className="min-h-screen bg-[#f5f6f8] text-slate-950">
     {sidebarOpen && <button aria-label="Close sidebar" className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
     <aside className={`fixed inset-y-0 left-0 z-50 flex w-[270px] flex-col border-r border-slate-200 bg-white transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="flex h-20 items-center gap-3 border-b border-slate-100 px-6"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white"><FileText size={20}/></span><div><p className="font-display text-lg font-bold tracking-tight">ResumeForge</p><p className="text-[10px] font-bold uppercase tracking-[.22em] text-slate-400">Private studio</p></div><button className="ml-auto text-slate-400 lg:hidden" onClick={() => setSidebarOpen(false)}><PanelLeftClose size={19}/></button></div>
@@ -70,5 +78,5 @@ export default function App() {
       <div className="border-t border-slate-100 p-4"><div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"><span className="grid h-9 w-9 place-items-center rounded-lg bg-white text-slate-500"><UserRound size={17}/></span><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold text-slate-700">{user.name}</p><p className="truncate text-[10px] text-slate-400">{user.email}</p></div><button title="Sign out" onClick={logout} className="text-slate-400 hover:text-red-500"><LogOut size={16}/></button></div></div>
     </aside>
     <main className="min-h-screen lg:ml-[270px]"><header className="sticky top-0 z-30 flex h-16 items-center border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:hidden"><button onClick={() => setSidebarOpen(true)} className="mr-3 rounded-lg p-2 text-slate-500 hover:bg-slate-100"><PanelLeftClose className="rotate-180" size={19}/></button><span className="font-display font-bold">ResumeForge</span></header>{error && <div className="fixed right-4 top-4 z-[80] max-w-md rounded-xl border border-red-200 bg-white p-4 text-sm text-red-700 shadow-xl lg:right-8"><button onClick={() => setError('')} className="float-right ml-4 text-red-400">×</button>{error}</div>}{view === 'new' && <TailorForm form={form} setForm={setForm} templates={templates.filter(item=>item.kind==='resume')} coverTemplate={templates.find(item=>item.kind==='cover_letter')} onSubmit={generate} loading={loading} />}{view === 'result' && result && <ResultsPanel result={result} onNew={newTailor} />}{view === 'history' && <HistoryPanel items={history} onOpen={openRun} onDelete={deleteRun} loading={loading} />}{view === 'templates' && <TemplateSetup user={user} templates={templates} onComplete={refreshUser} onLogout={logout} embedded/>}</main>
-  </div>
+  </div></>
 }
