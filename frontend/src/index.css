@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { font-family: 'DM Sans', sans-serif; background: #f5f6f8; color: #0f172a; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input, textarea, select { font: inherit; }
+button, a { transition: all 150ms ease; }
+button:active { transform: translateY(1px); }
+::selection { background: #c7d2fe; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+.font-display { font-family: 'Manrope', sans-serif; }
+
+@layer components {
+  .surface { @apply rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/30; }
+  .input { @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100/70; }
+  .label { @apply mb-2 block text-[11px] font-bold uppercase tracking-[.12em] text-slate-500; }
+  .primary-btn { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50; }
+  .nav-item { @apply flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-900; }
+  .nav-active { @apply bg-indigo-50 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-700; }
+  .toolbar-btn { @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900; }
+}
+
+/* Letter-size document canvas, reconstructed from the supplied Overleaf PDFs. */
+.paper { width: 816px; min-height: 1056px; margin: 0 auto; background: white; color: #111; box-shadow: 0 8px 32px rgba(15,23,42,.12); font-family: 'Times New Roman', Times, serif; }
+.resume-paper { height: 1056px; overflow: hidden; padding: 25px 38px 22px; font-size: 11.6px; line-height: 1.15; }
+.resume-header { text-align: center; }
+.resume-header h1 { margin: 0; font-size: 29px; font-weight: 500; line-height: 1; letter-spacing: 1.8px; font-variant: small-caps; text-transform: capitalize; }
+.resume-header h2 { margin: 1px 0 5px; font-size: 17px; line-height: 1.1; font-weight: 700; }
+.doc-contact { display: flex; justify-content: center; gap: 14px; white-space: nowrap; font-size: 10px; }
+.doc-contact a { color: inherit; text-decoration: underline; text-underline-offset: 1px; }
+.doc-section { margin-top: 8px; }
+.doc-section h3 { margin: 0 0 4px; border-bottom: 1px solid #444; font-size: 17px; line-height: 1.05; font-weight: 500; }
+.consulting-paper .doc-section h3 { border-color: #7582a5; }
+.doc-section p { margin: 0 0 2px; text-align: justify; }
+.doc-section.compact { margin-top: 6px; }
+.doc-section.compact h3 { margin-bottom: 3px; }
+.doc-entry { margin: 4px 0 5px; }
+.entry-head, .entry-sub { display: flex; justify-content: space-between; gap: 12px; }
+.entry-head strong:last-child, .entry-sub em:last-child { flex-shrink: 0; }
+.entry-sub { color: #222; }
+.consulting-paper .entry-sub { color: #334d82; }
+.technologies { margin-top: -1px; text-align: right; }
+.doc-entry ul { margin: 1px 0 0; padding-left: 14px; list-style: none; }
+.doc-entry li { position: relative; margin: 0 0 1px; text-align: justify; }
+.doc-entry li::before { content: '–'; position: absolute; left: -13px; color: #666; }
+.dash { padding-left: 13px; position: relative; }
+.dash::before { content: '–'; position: absolute; left: 0; }
+.cert-list { margin: 0; padding-left: 15px; columns: 1; }
+.cert-list li { margin: 0; }
+.cert-list a, .cert-list em { float: right; margin-left: 10px; }
+.cert-list a { color: #0000ee; text-decoration: none; }
+.entry-sub a { color: #0000ee; text-decoration: none; }
+
+.cover-paper { min-height: 1056px; padding: 34px 56px 38px; font-size: 15px; line-height: 1.28; }
+.letter-header h1 { margin: 0 0 5px; font-size: 23px; line-height: 1; font-weight: 700; }
+.letter-header .doc-contact { justify-content: flex-start; gap: 13px; font-size: 10.5px; }
+.letter-date { margin-top: 23px; }
+.recipient { margin-top: 25px; }
+.recipient p { margin: 0; }
+.cover-paper > h2 { margin: 24px 0 24px; font-size: 16px; font-weight: 700; }
+.cover-paper > p { margin: 0 0 16px; text-align: justify; }
+.letter-proof { margin-bottom: 15px; }
+.letter-proof h3 { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
+.letter-proof p { margin: 0; text-align: justify; }
+.signature { margin-top: 24px; }
+.signature p { margin: 0 0 28px; }
+.signature strong { font-weight: 700; }
+
+@page { size: letter; margin: 0; }
+@media print {
+  body { background: white; }
+  body * { visibility: hidden !important; }
+  .print-current, .print-current * { visibility: visible !important; }
+  .print-current { position: absolute !important; inset: 0 auto auto 0 !important; width: 8.5in !important; height: 11in !important; min-height: 11in !important; box-shadow: none !important; }
+}

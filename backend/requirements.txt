@@ -1,0 +1,9 @@
+fastapi==0.115.8
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+python-dotenv==1.0.1
+google-genai>=2.0.0,<3.0.0
+vercel>=0.7.2,<1.0.0
+email-validator>=2.2.0,<3.0.0
+pypdf==5.2.0
+python-docx==1.1.2
