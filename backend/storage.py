@@ -6,7 +6,6 @@ from typing import Any
 from vercel.blob import AsyncBlobClient
 
 LOCAL_ROOT = Path(__file__).resolve().parent / "user_data"
-LOCAL_ROOT.mkdir(exist_ok=True)
 
 
 def using_blob() -> bool:
