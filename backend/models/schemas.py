@@ -39,6 +39,40 @@ class TailorRequest(BaseModel):
     extra_instructions: str | None = Field(default=None, max_length=2000)
 
 
+class RevisionRequest(BaseModel):
+    instruction: str = Field(min_length=3, max_length=2000)
+    target: Literal["resume", "cover_letter", "both"] = "both"
+
+
+class RevisionMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+    created_at: datetime
+
+
+class ResearchSource(BaseModel):
+    title: str
+    url: str
+
+
+class CompanyResearch(BaseModel):
+    overview: str
+    founded: str
+    headquarters: str
+    ceo_leadership: str
+    industry: str
+    what_they_do: str
+    products_services: list[str]
+    business_model: str
+    technology_stack: list[str]
+    investors_ownership: list[str]
+    competitors: list[str]
+    recent_developments: list[str]
+    culture_and_values: list[str]
+    interview_angles: list[str]
+    sources: list[ResearchSource]
+
+
 class TailorResult(BaseModel):
     id: str
     company_name: str
@@ -57,6 +91,9 @@ class TailorResult(BaseModel):
     tailoring_notes: list[str]
     created_at: datetime
     layout_profile: str = ""
+    revision_messages: list[RevisionMessage] = Field(default_factory=list)
+    company_research: CompanyResearch | None = None
+    short_message: str = ""
 
 
 class HistoryItem(BaseModel):
@@ -144,3 +181,13 @@ class GeminiTailoringOutput(BaseModel):
     matched_keywords: list[str]
     missing_keywords: list[str]
     tailoring_notes: list[str]
+
+
+class GeminiRevisionOutput(BaseModel):
+    resume: GeneratedResume
+    cover_letter: GeneratedCoverLetter
+    change_summary: str
+
+
+class ShortMessageOutput(BaseModel):
+    message: str

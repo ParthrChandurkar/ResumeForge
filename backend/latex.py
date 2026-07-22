@@ -174,7 +174,8 @@ def cover_letter_tex(run: dict) -> str:
 """ + r"{\LARGE\bfseries " + esc(name) + r"}\\[3pt]" + "\n" + contact_tex(contact)]
     parts.append(esc(display_date) + r"\\[8pt]")
     parts.append(esc(letter.get("recipient_team")) + r"\\" + esc(letter.get("company")) + r"\\" + esc(letter.get("location")))
-    parts.append(r"\textbf{Re: " + esc(letter.get("subject")) + "}")
+    subject = re.sub(r"^(?:\s*re\s*:\s*)+", "", str(letter.get("subject") or ""), flags=re.IGNORECASE).strip()
+    parts.append(r"\textbf{Re: " + esc(subject) + "}")
     parts.append(esc(letter.get("salutation")))
     parts.append(esc(letter.get("opening")))
     for section in letter.get("evidence_sections", []):

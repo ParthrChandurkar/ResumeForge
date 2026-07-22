@@ -11,7 +11,9 @@ function displayUrl(url=''){return url.replace(/^https?:\/\//,'').replace(/\/$/,
 export function ResumePreview({ result, printCurrent=false }) {
   const r=result.resume, consulting=result.template_track==='consulting'
   const precision=result.layout_profile==='precision'
-  return <article className={`paper resume-paper ${consulting?'consulting-paper':'cloud-paper'} ${precision?'precision-paper':''} ${printCurrent?'print-current':''}`}>
+  const words=JSON.stringify(r).replace(/[{}[\]":,_]/g,' ').trim().split(/\s+/).filter(Boolean).length
+  const density=words<560?'density-relaxed':words<700?'density-balanced':'density-tight'
+  return <article className={`paper resume-paper ${consulting?'consulting-paper':'cloud-paper'} ${precision?`precision-paper ${density}`:''} ${printCurrent?'print-current':''}`}>
     <header className="resume-header"><h1>{r.contact?.name||'Candidate'}</h1><h2>{r.headline}</h2><Contact contact={r.contact} variant={result.template_track}/></header>
     <DocSection title={r.profile_title}><p>{r.profile}</p></DocSection>
     <DocSection title={r.skills_title} compact>{consulting&&precision&&r.competency_bullets?.length>0&&<div className="competency-grid">{r.competency_bullets.map((item,i)=><span key={i}>{item}</span>)}</div>}{r.skill_groups?.map((group,i)=><p key={i}><strong>{group.label}:</strong> {group.items}</p>)}</DocSection>
@@ -24,9 +26,10 @@ export function ResumePreview({ result, printCurrent=false }) {
 
 export function CoverLetterPreview({ result, printCurrent=false }) {
   const l=result.cover_letter
+  const precision=result.layout_profile==='precision'
   const today=new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',year:'numeric'}).format(new Date())
   const contact=l.contact||result.resume?.contact||{}
-  return <article className={`paper cover-paper ${printCurrent?'print-current':''}`}><header className="letter-header"><h1><strong>{contact.name||'Candidate'}</strong></h1><Contact contact={contact} variant="cover"/></header><div className="letter-date">{today}</div><div className="recipient"><p>{l.recipient_team}</p><p>{l.company}</p><p>{l.location}</p></div><h2><strong>Re: {l.subject}</strong></h2><p>{l.salutation}</p><p>{l.opening}</p>{l.evidence_sections?.map((section,i)=><section key={i} className="letter-proof"><h3><strong>{section.heading}</strong></h3><p>{section.body}</p></section>)}<p>{l.motivation}</p><p>{l.closing}</p><div className="signature"><p>Yours sincerely,</p><strong>{contact.name||'Candidate'}</strong></div></article>
+  return <article className={`paper cover-paper ${precision?'precision-cover':''} ${printCurrent?'print-current':''}`}><header className="letter-header"><h1><strong>{contact.name||'Candidate'}</strong></h1><Contact contact={contact} variant="cover"/></header><div className="letter-date">{today}</div><div className="recipient"><p>{l.recipient_team}</p><p>{l.company}</p><p>{l.location}</p></div><h2><strong>Re: {cleanSubject(l.subject)}</strong></h2><p>{l.salutation}</p><p>{l.opening}</p>{l.evidence_sections?.map((section,i)=><section key={i} className="letter-proof"><h3><strong>{section.heading}</strong></h3><p>{section.body}</p></section>)}<p>{l.motivation}</p><p>{l.closing}</p><div className="signature"><p>Yours sincerely,</p><strong>{contact.name||'Candidate'}</strong></div></article>
 }
 
 function DocSection({title,children,compact=false}){return <section className={`doc-section ${compact?'compact':''}`}><h3>{title}</h3><div>{children}</div></section>}
@@ -37,4 +40,5 @@ function MetricText({text=''}){const parts=text.split(/(\b\d+(?:\.\d+)?%)/g);ret
 function linkEntry(text='',url='') { if(!url)return text; const index=text.toLowerCase().indexOf('ieee'); return index<0?<a href={url} target="_blank" rel="noreferrer">{text}</a>:<>{text.slice(0,index)}<a href={url} target="_blank" rel="noreferrer">{text.slice(index)}</a></> }
 function Certification({item,consulting}) { const data=typeof item==='string'?{name:item,issuer:'',url:''}:item; const lower=(data.name||'').toLowerCase(); const clean=(data.name||'').replace(/\s*(View Certificate|Verify)\s*$/i,''); return <li><span>{clean}{data.issuer?` – ${data.issuer}`:''}</span>{data.url&&<a href={data.url} target="_blank" rel="noreferrer">{consulting?'Verify':'View Certificate'}</a>}{!data.url&&lower.includes('in progress')&&<em>In Progress</em>}</li> }
 
-export function coverLetterText(result){const l=result.cover_letter,name=l.contact?.name||result.resume?.contact?.name||'Candidate';return [`${l.recipient_team}\n${l.company}\n${l.location}`,`Re: ${l.subject}`,l.salutation,l.opening,...(l.evidence_sections||[]).flatMap(s=>[s.heading,s.body]),l.motivation,l.closing,`Yours sincerely,\n${name}`].join('\n\n')}
+function cleanSubject(subject=''){return subject.replace(/^(?:\s*re\s*:\s*)+/i,'').trim()}
+export function coverLetterText(result){const l=result.cover_letter,name=l.contact?.name||result.resume?.contact?.name||'Candidate';return [`${l.recipient_team}\n${l.company}\n${l.location}`,`Re: ${cleanSubject(l.subject)}`,l.salutation,l.opening,...(l.evidence_sections||[]).flatMap(s=>[s.heading,s.body]),l.motivation,l.closing,`Yours sincerely,\n${name}`].join('\n\n')}
