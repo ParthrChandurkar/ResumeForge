@@ -56,6 +56,7 @@ class TailorResult(BaseModel):
     missing_keywords: list[str]
     tailoring_notes: list[str]
     created_at: datetime
+    layout_profile: str = ""
 
 
 class HistoryItem(BaseModel):
@@ -105,6 +106,7 @@ class GeneratedResume(BaseModel):
     profile: str
     skills_title: str
     skill_groups: list[SkillGroup]
+    competency_bullets: list[str] = Field(default_factory=list)
     experience_title: str
     experiences: list[ResumeEntry]
     secondary_title: str

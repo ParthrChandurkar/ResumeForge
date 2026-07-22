@@ -26,6 +26,7 @@ NON-NEGOTIABLE RULES:
 5. Keep every bullet concise, impact-led, and evidence-based. Retain quantified outcomes where relevant.
 6. Copy contact details, education, dates, grades, links, and certifications accurately from the base resume. Retain every embedded URL in the matching contact field, experience.url, secondary_entries.url, or certification.url field.
 7. Return valid JSON only with exactly three evidence sections in the cover letter.
+8. When the source resume has a separate bullet-based competency grid, preserve it in resume.competency_bullets instead of flattening it into skill groups.
 
 Use the response schema exactly. The match score is a realistic 0–100 estimate after tailoring. Missing keywords must only describe genuine gaps that must not be fabricated."""
 
@@ -42,6 +43,63 @@ def _find_run(manifest: dict, run_id: str) -> dict:
     run = next((item for item in manifest["runs"] if item["id"] == run_id), None)
     if not run:
         raise HTTPException(status_code=404, detail="Tailoring session not found")
+    return run
+
+
+def _layout_profile(user: User) -> str:
+    """Enable exact-template rendering only for privately configured user IDs."""
+    configured = {item.strip() for item in os.getenv("PRECISION_LAYOUT_USER_IDS", "").split(",") if item.strip()}
+    return "precision" if user.id in configured else ""
+
+
+def _restore_template_structure(run: dict, template: dict, user: User) -> dict:
+    """Restore link targets and structural details that model output can omit."""
+    profile = _layout_profile(user)
+    if not profile:
+        return run
+    run["layout_profile"] = profile
+    source = template.get("extracted_text", "")
+    urls = re.findall(r"(?:https?://|mailto:|tel:)[^\s]+", source)
+    resume = run.get("resume", {})
+    contact = resume.setdefault("contact", {})
+    contact_maps = {
+        "email": next((url.removeprefix("mailto:") for url in urls if url.startswith("mailto:")), ""),
+        "github": next((url for url in urls if "github.com/" in url.lower()), ""),
+        "linkedin": next((url for url in urls if "linkedin.com/" in url.lower()), ""),
+        "portfolio": next((url for url in urls if url.startswith("http") and "vercel.app" in url.lower()), ""),
+    }
+    for key, value in contact_maps.items():
+        if value:
+            contact[key] = value
+    letter_contact = run.get("cover_letter", {}).setdefault("contact", {})
+    for key, value in contact.items():
+        if value:
+            letter_contact[key] = value
+
+    entries = [*resume.get("experiences", []), *resume.get("secondary_entries", [])]
+    publication_entry = next((entry for entry in entries if "ieee" in " ".join([
+        str(entry.get("title", "")), str(entry.get("subtitle", "")), *map(str, entry.get("bullets", []))
+    ]).lower()), None)
+    publication_url = next((url for url in urls if "ieeexplore.ieee.org" in url.lower()), "")
+    drive_urls = [url for url in urls if "drive.google.com" in url.lower()]
+    certifications = resume.get("certifications", [])
+    if publication_entry and not publication_url and len(drive_urls) > len([item for item in certifications if "progress" not in str(item).lower()]):
+        publication_url = drive_urls.pop(0)
+    if publication_entry and publication_url:
+        publication_entry["url"] = publication_url
+    elif publication_url and entries:
+        entries[0]["url"] = publication_url
+
+    for item in certifications:
+        if not isinstance(item, dict) or "progress" in f"{item.get('name', '')} {item.get('issuer', '')}".lower():
+            continue
+        if drive_urls:
+            item["url"] = drive_urls.pop(0)
+
+    if template.get("track", "").lower() == "consulting" and not resume.get("competency_bullets"):
+        match = re.search(r"Core Competencies\s*&\s*Tools\s*(.*?)(?:Cloud\s*&\s*Infrastructure\s*:)", source, re.IGNORECASE | re.DOTALL)
+        if match:
+            resume["competency_bullets"] = [part.strip() for part in match.group(1).split("•") if part.strip()]
     return run
 
 
@@ -126,6 +184,7 @@ Tailor both documents while preserving truth, the resume structure, and the cove
         "matched_keywords": result["matched_keywords"], "missing_keywords": result["missing_keywords"],
         "tailoring_notes": result["tailoring_notes"], "created_at": datetime.now(timezone.utc).isoformat(),
     }
+    _restore_template_structure(run, template, user)
     manifest["runs"].insert(0, run)
     manifest["runs"] = manifest["runs"][:50]
     await save_manifest(user.id, manifest)
@@ -143,7 +202,10 @@ async def tailoring_history(user: User = Depends(require_user)) -> list[dict]:
 @router.get("/{run_id}", response_model=TailorResult)
 async def get_tailoring_run(run_id: str, user: User = Depends(require_user)) -> dict:
     """Return an authenticated user's complete previous tailoring session."""
-    return _find_run(await get_manifest(user.id), run_id)
+    manifest = await get_manifest(user.id)
+    run = _find_run(manifest, run_id)
+    template = next((item for item in manifest["templates"] if item["id"] == run.get("template_id")), {})
+    return _restore_template_structure(run, template, user)
 
 
 @router.delete("/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -159,7 +221,10 @@ async def delete_tailoring_run(run_id: str, user: User = Depends(require_user)) 
 @router.get("/{run_id}/resume.tex")
 async def download_resume_tex(run_id: str, user: User = Depends(require_user)) -> Response:
     """Download an authenticated user's Overleaf-ready tailored resume source."""
-    run = _find_run(await get_manifest(user.id), run_id)
+    manifest = await get_manifest(user.id)
+    run = _find_run(manifest, run_id)
+    template = next((item for item in manifest["templates"] if item["id"] == run.get("template_id")), {})
+    _restore_template_structure(run, template, user)
     filename = re.sub(r"[^A-Za-z0-9._-]+", "-", f"{user.name}-{run['company_name']}-Resume.tex")
     return Response(content=resume_tex(run), media_type="application/x-tex", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
@@ -167,6 +232,9 @@ async def download_resume_tex(run_id: str, user: User = Depends(require_user)) -
 @router.get("/{run_id}/cover-letter.tex")
 async def download_cover_letter_tex(run_id: str, user: User = Depends(require_user)) -> Response:
     """Download an authenticated user's Overleaf-ready tailored cover-letter source."""
-    run = _find_run(await get_manifest(user.id), run_id)
+    manifest = await get_manifest(user.id)
+    run = _find_run(manifest, run_id)
+    template = next((item for item in manifest["templates"] if item["id"] == run.get("template_id")), {})
+    _restore_template_structure(run, template, user)
     filename = re.sub(r"[^A-Za-z0-9._-]+", "-", f"{user.name}-{run['company_name']}-Cover-Letter.tex")
     return Response(content=cover_letter_tex(run), media_type="application/x-tex", headers={"Content-Disposition": f'attachment; filename="{filename}"'})

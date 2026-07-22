@@ -1,4 +1,5 @@
 from datetime import date
+import re
 
 
 def esc(value: object) -> str:
@@ -49,7 +50,7 @@ def safe_url(value: object) -> str:
     return url if url.startswith(("https://", "http://", "mailto:", "tel:")) else ""
 
 
-def contact_tex(contact: dict, include_github: bool = True) -> str:
+def contact_tex(contact: dict, include_github: bool = True, full_labels: bool = False) -> str:
     """Render only available user contact fields as clickable LaTeX links."""
     fields = []
     phone = str(contact.get("phone", "")).strip()
@@ -63,8 +64,18 @@ def contact_tex(contact: dict, include_github: bool = True) -> str:
             continue
         url = safe_url(contact.get(key, ""))
         if url:
-            fields.append(rf"\href{{{url}}}{{{label}}}")
+            display = url.removeprefix("https://").removeprefix("http://").rstrip("/") if full_labels else label
+            fields.append(rf"\href{{{url}}}{{{esc(display)}}}")
     return r" $\cdot$ ".join(fields)
+
+
+def bullet_tex(value: object, emphasize_metrics: bool = False) -> str:
+    """Escape a bullet while retaining the consulting template's bold metrics."""
+    text = str(value or "")
+    if not emphasize_metrics:
+        return esc(text)
+    parts = re.split(r"(\b\d+(?:\.\d+)?%)", text)
+    return "".join(rf"\textbf{{{esc(part)}}}" if re.fullmatch(r"\d+(?:\.\d+)?%", part) else esc(part) for part in parts)
 
 
 PREAMBLE = r"""\documentclass[10pt,letterpaper]{article}
@@ -82,20 +93,48 @@ PREAMBLE = r"""\documentclass[10pt,letterpaper]{article}
 \begin{document}
 """
 
+PRECISION_PREAMBLE = r"""\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.39in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{enumitem,hyperref,xcolor,tabularx}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\definecolor{sectionblue}{HTML}{0A2463}
+\hypersetup{colorlinks=true,urlcolor=blue}
+\newcommand{\sectionline}[1]{\vspace{3pt}{\fontsize{12}{13}\selectfont #1}\vspace{1pt}\\[-4pt]\color{black}\rule{\linewidth}{0.4pt}\color{black}\vspace{2pt}}
+\newcommand{\entry}[4]{\textbf{#1}\hfill\textbf{#3}\\\textit{#2}\hfill\textit{#4}}
+\setlist[itemize]{leftmargin=11pt,itemsep=0pt,topsep=1pt,parsep=0pt}
+\begin{document}\fontsize{9}{10.2}\selectfont
+"""
+
 
 def resume_tex(run: dict) -> str:
     """Render a tailored resume as an Overleaf-ready LaTeX document."""
     resume = run["resume"]
     consulting = run.get("template_track") == "consulting"
+    precision = run.get("layout_profile") == "precision"
     rule = "ruleblue" if consulting else "black"
-    parts = [PREAMBLE.replace("\\color{ruleblue}\\rule", f"\\color{{{rule}}}\\rule")]
+    if precision:
+        preamble = PRECISION_PREAMBLE
+        if consulting:
+            preamble = preamble.replace(r"\color{black}\rule", r"\color{sectionblue}\rule")
+        parts = [preamble]
+    else:
+        parts = [PREAMBLE.replace("\\color{ruleblue}\\rule", f"\\color{{{rule}}}\\rule")]
     contact_data = resume.get("contact", {})
     name = contact_data.get("name") or "Candidate"
-    parts.append(r"\begin{center}{\fontsize{22}{24}\selectfont\scshape " + esc(name) + r"}\\[-1pt]")
+    name_size = "24.8}{25" if precision else "22}{24"
+    parts.append(r"\begin{center}{\fontsize{" + name_size + r"}\selectfont\scshape " + esc(name) + r"}\\[-1pt]")
     parts.append(r"{\large\bfseries " + esc(resume.get("headline")) + r"}\\[2pt]")
-    parts.append(contact_tex(contact_data, include_github=not consulting) + r"\end{center}")
+    parts.append(contact_tex(contact_data, include_github=not consulting, full_labels=precision) + r"\end{center}")
     parts.append("\\sectionline{" + esc(resume.get("profile_title", "Profile")) + "}\n" + esc(resume.get("profile")))
     parts.append("\\sectionline{" + esc(resume.get("skills_title", "Skills")) + "}")
+    competency_bullets = resume.get("competency_bullets", [])
+    if precision and consulting and competency_bullets:
+        rows = [competency_bullets[index:index + 3] for index in range(0, len(competency_bullets), 3)]
+        row_separator = r" \\" + "\n"
+        parts.append(r"\begin{tabularx}{\linewidth}{@{}XXX@{}}" + row_separator.join(" & ".join(r"$\bullet$ " + esc(item) for item in row) for row in rows) + r"\end{tabularx}")
     for group in resume.get("skill_groups", []):
         parts.append("\\textbf{" + esc(group.get("label")) + ":} " + esc(group.get("items")) + r"\\")
     parts.append("\\sectionline{" + esc(resume.get("experience_title", "Experience")) + "}")
@@ -103,14 +142,14 @@ def resume_tex(run: dict) -> str:
         parts.append("\\entry{" + esc(entry.get("title")) + "}{" + linked_entry(entry.get("subtitle"), entry.get("url")) + "}{" + esc(entry.get("date")) + "}{" + esc(entry.get("location")) + "}")
         if entry.get("technologies"):
             parts.append(r"\\[-1pt]\textit{" + esc(entry.get("technologies")) + "}")
-        parts.append(r"\begin{itemize}" + "".join("\\item " + esc(b) for b in entry.get("bullets", [])) + r"\end{itemize}")
+        parts.append(r"\begin{itemize}" + "".join("\\item " + bullet_tex(b, precision and consulting) for b in entry.get("bullets", [])) + r"\end{itemize}")
     if resume.get("secondary_entries"):
         parts.append("\\sectionline{" + esc(resume.get("secondary_title", "Projects")) + "}")
         for entry in resume.get("secondary_entries", []):
             parts.append("\\entry{" + esc(entry.get("title")) + "}{" + linked_entry(entry.get("subtitle"), entry.get("url")) + "}{" + esc(entry.get("date")) + "}{" + esc(entry.get("location")) + "}")
             if entry.get("technologies"):
                 parts.append(r"\\[-1pt]\textit{" + esc(entry.get("technologies")) + "}")
-            parts.append(r"\begin{itemize}" + "".join("\\item " + esc(b) for b in entry.get("bullets", [])) + r"\end{itemize}")
+            parts.append(r"\begin{itemize}" + "".join("\\item " + bullet_tex(b, precision and consulting) for b in entry.get("bullets", [])) + r"\end{itemize}")
     parts.append(r"\sectionline{Education}\textbf{" + esc(resume.get("education_institution")) + r"}\hfill\textbf{" + esc(resume.get("education_dates")) + r"}\\\textit{" + esc(resume.get("education_degree")) + r"}\hfill\textit{" + esc(resume.get("education_grade")) + r"}\\[-1pt]Relevant Coursework: " + esc(resume.get("education_coursework")))
     parts.append(r"\sectionline{Certifications \& Professional Development}\begin{itemize}")
     parts.extend("\\item " + certification_tex(item, consulting) for item in resume.get("certifications", []))

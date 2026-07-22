@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+@import 'computer-modern/cmu-serif.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -85,6 +86,30 @@ button:active { transform: translateY(1px); }
 .signature { margin-top: 24px; }
 .signature p { margin: 0 0 28px; }
 .signature strong { font-weight: 700; }
+
+/* Pixel-matched profile for the privately configured original LaTeX templates. */
+.precision-paper { padding: 19px 34px 18px; font-family: 'CMU Serif', serif; font-size: 12px; font-weight: 500; line-height: 1.08; }
+.precision-paper .resume-header h1 { font-size: 33px; font-weight: 500; line-height: .94; letter-spacing: 1.2px; text-transform: none; }
+.precision-paper .resume-header h2 { margin: 0 0 5px; font-size: 16px; line-height: 1; font-weight: 700; }
+.precision-paper .doc-contact { gap: 14px; font-size: 12px; line-height: 1; }
+.precision-paper .doc-contact a { display: inline-flex; align-items: center; gap: 4px; }
+.precision-paper .doc-contact svg { width: 12px; height: 12px; fill: currentColor; stroke-width: 2.4; }
+.precision-paper .doc-section { margin-top: 8px; }
+.precision-paper .doc-section h3 { margin-bottom: 4px; border-bottom-width: 1px; border-color: #333; font-size: 16px; line-height: 1; font-weight: 500; }
+.precision-paper .doc-section p { margin-bottom: 1px; }
+.precision-paper .doc-entry { margin: 4px 0 5px; }
+.precision-paper .doc-entry ul { margin-top: 1px; padding-left: 15px; }
+.precision-paper .doc-entry li { margin-bottom: 1px; line-height: 1.08; }
+.precision-paper .entry-head strong { font-weight: 700; }
+.precision-paper .entry-sub, .precision-paper .technologies { font-style: italic; }
+.precision-paper .cert-list { padding-left: 15px; }
+.precision-paper .cert-list li::marker { font-size: 10px; }
+.precision-paper .cert-list strong, .precision-paper .doc-entry strong { font-weight: 700; }
+.precision-paper.consulting-paper .doc-section h3 { border-color: #0a2463; }
+.precision-paper.consulting-paper .entry-sub { color: #0a2463; }
+.precision-paper .competency-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 16px; margin: 2px 0 3px; }
+.precision-paper .competency-grid span { position: relative; padding-left: 10px; white-space: nowrap; }
+.precision-paper .competency-grid span::before { content: '•'; position: absolute; left: 0; }
 
 @page { size: letter; margin: 0; }
 @media print {
