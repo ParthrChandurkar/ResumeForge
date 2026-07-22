@@ -91,7 +91,7 @@ Tailor both documents while preserving truth, the resume structure, and the cove
                         model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash"),
                         contents=user_prompt,
                         config=types.GenerateContentConfig(
-                            system_instruction=SYSTEM_PROMPT, temperature=0.2, max_output_tokens=7000,
+                            system_instruction=SYSTEM_PROMPT, temperature=0.2, max_output_tokens=12000,
                             response_mime_type="application/json", response_schema=GeminiTailoringOutput,
                         ),
                     )
@@ -104,7 +104,12 @@ Tailor both documents while preserving truth, the resume structure, and the cove
                 await asyncio.sleep(2 ** attempt)
         if response is None:
             raise RuntimeError("Gemini did not return a response")
-        result = _parse_json(response.text or "")
+        if isinstance(response.parsed, GeminiTailoringOutput):
+            result = response.parsed.model_dump()
+        elif isinstance(response.parsed, dict):
+            result = response.parsed
+        else:
+            result = _parse_json(response.text or "")
     except HTTPException:
         raise
     except Exception as exc:
