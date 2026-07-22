@@ -45,7 +45,7 @@ Copy `.env.example` to `.env` and add your own values:
 
 ```env
 GEMINI_API_KEY=your_key
-GEMINI_MODEL=gemini-3.5-flash
+GEMINI_MODEL=gemini-3.5-flash-lite
 SESSION_SECRET=at_least_32_random_characters
 AUTH_USERS_JSON=[{"id":"user1","name":"User One","email":"user@example.com","password":"change-me"}]
 ```

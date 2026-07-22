@@ -88,10 +88,10 @@ Tailor both documents while preserving truth, the resume structure, and the cove
             try:
                 with genai.Client(api_key=api_key) as client:
                     response = client.models.generate_content(
-                        model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash"),
+                        model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
                         contents=user_prompt,
                         config=types.GenerateContentConfig(
-                            system_instruction=SYSTEM_PROMPT, temperature=0.2, max_output_tokens=12000,
+                            system_instruction=SYSTEM_PROMPT, max_output_tokens=12000,
                             response_mime_type="application/json", response_schema=GeminiTailoringOutput,
                         ),
                     )
