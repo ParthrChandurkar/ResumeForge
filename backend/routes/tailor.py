@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import re
@@ -82,15 +83,27 @@ EXTRA INSTRUCTIONS: {payload.extra_instructions or 'None'}
 
 Tailor both documents while preserving truth, the resume structure, and the cover-letter template style."""
     try:
-        with genai.Client(api_key=api_key) as client:
-            response = client.models.generate_content(
-                model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash"),
-                contents=user_prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT, temperature=0.2, max_output_tokens=7000,
-                    response_mime_type="application/json", response_schema=GeminiTailoringOutput,
-                ),
-            )
+        response = None
+        for attempt in range(3):
+            try:
+                with genai.Client(api_key=api_key) as client:
+                    response = client.models.generate_content(
+                        model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash"),
+                        contents=user_prompt,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT, temperature=0.2, max_output_tokens=7000,
+                            response_mime_type="application/json", response_schema=GeminiTailoringOutput,
+                        ),
+                    )
+                break
+            except Exception as exc:
+                message = str(exc).lower()
+                transient = any(marker in message for marker in ("429", "503", "unavailable", "high demand", "rate limit"))
+                if not transient or attempt == 2:
+                    raise
+                await asyncio.sleep(2 ** attempt)
+        if response is None:
+            raise RuntimeError("Gemini did not return a response")
         result = _parse_json(response.text or "")
     except HTTPException:
         raise
