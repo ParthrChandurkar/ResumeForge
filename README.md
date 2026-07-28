@@ -1,6 +1,6 @@
 # 🔥 ResumeForge
 
-**Forge a role-specific resume and personalized cover letter from one job description—without inventing experience or losing your established document style.**
+**Forge a Role-specific resume and personalized cover letter from one job description—without inventing experience or losing your established document style.**
 
 ResumeForge is a private, multi-user application studio powered by Gemini. Each approved user maintains an isolated collection of resume variants, one cover-letter template, and a personal tailoring history.
 
