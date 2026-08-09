@@ -50,7 +50,7 @@ def public_template(item: dict) -> dict:
 async def list_templates(user: User = Depends(require_user)) -> list[dict]:
     """Return only the authenticated user's resume and cover-letter templates."""
     manifest = await get_manifest(user.id)
-    return [public_template(item) for item in manifest["templates"]]
+    return [public_template(item) for item in manifest["templates"] if not item.get("archived")]
 
 
 @router.post("", response_model=TemplateOut, status_code=status.HTTP_201_CREATED)
@@ -85,6 +85,44 @@ async def upload_template(
         manifest["templates"] = [item for item in manifest["templates"] if item["kind"] != "cover_letter"]
     item = {
         "id": template_id, "name": name.strip(), "kind": kind, "track": track.strip() or "custom",
+        "filename": file.filename or safe_name, "content_type": file.content_type or "application/octet-stream",
+        "object_path": object_path, "extracted_text": extracted,
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+    }
+    manifest["templates"].append(item)
+    await save_manifest(user.id, manifest)
+    return public_template(item)
+
+
+@router.post("/{template_id}/replace", response_model=TemplateOut, status_code=status.HTTP_201_CREATED)
+async def replace_resume_template(
+    template_id: str,
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    track: str = Form("custom"),
+    user: User = Depends(require_user),
+) -> dict:
+    """Archive one resume for history and replace it with a new active template."""
+    manifest = await get_manifest(user.id)
+    previous = next((item for item in manifest["templates"] if item["id"] == template_id and item["kind"] == "resume"), None)
+    if not previous or previous.get("archived"):
+        raise HTTPException(status_code=404, detail="Active resume template not found")
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Upload a PDF, DOCX, TXT, or Overleaf TEX file")
+    content = await file.read()
+    if not content or len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Template files must be between 1 byte and 10 MB")
+    extracted = extract_text(content, suffix)
+    if len(extracted.strip()) < 40:
+        raise HTTPException(status_code=400, detail="Not enough readable text was found in this file")
+    new_id = uuid4().hex[:16]
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "-", file.filename or f"template{suffix}").strip("-")
+    object_path = f"users/{user.id}/templates/{new_id}/{safe_name}"
+    await put_bytes(object_path, content, file.content_type or "application/octet-stream")
+    previous["archived"] = True
+    item = {
+        "id": new_id, "name": name.strip(), "kind": "resume", "track": track.strip() or "custom",
         "filename": file.filename or safe_name, "content_type": file.content_type or "application/octet-stream",
         "object_path": object_path, "extracted_text": extracted,
         "uploaded_at": datetime.now(timezone.utc).isoformat(),

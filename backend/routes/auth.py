@@ -11,8 +11,8 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 async def _user_out(user: User) -> dict:
     manifest = await get_manifest(user.id)
-    resumes = [item for item in manifest["templates"] if item["kind"] == "resume"]
-    covers = [item for item in manifest["templates"] if item["kind"] == "cover_letter"]
+    resumes = [item for item in manifest["templates"] if item["kind"] == "resume" and not item.get("archived")]
+    covers = [item for item in manifest["templates"] if item["kind"] == "cover_letter" and not item.get("archived")]
     return {"id": user.id, "name": user.name, "email": user.email, "resume_count": len(resumes), "has_cover_letter": bool(covers), "setup_complete": bool(resumes and covers)}
 
 

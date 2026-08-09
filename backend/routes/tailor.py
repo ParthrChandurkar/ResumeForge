@@ -234,8 +234,8 @@ async def tailor_documents(payload: TailorRequest, user: User = Depends(require_
     if not api_key:
         raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured for this deployment")
     manifest = await get_manifest(user.id)
-    template = next((item for item in manifest["templates"] if item["id"] == payload.template_id and item["kind"] == "resume"), None)
-    cover = next((item for item in manifest["templates"] if item["kind"] == "cover_letter"), None)
+    template = next((item for item in manifest["templates"] if item["id"] == payload.template_id and item["kind"] == "resume" and not item.get("archived")), None)
+    cover = next((item for item in manifest["templates"] if item["kind"] == "cover_letter" and not item.get("archived")), None)
     if not template:
         raise HTTPException(status_code=404, detail="Selected resume template not found")
     if not cover:

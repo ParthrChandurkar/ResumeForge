@@ -1,9 +1,9 @@
 import { FaEnvelope, FaGithub, FaGlobe, FaLinkedin, FaPhone } from 'react-icons/fa6'
 
 function Contact({contact={},variant}) {
-  const cloud = variant === 'cloud'
+  const showGithub = variant !== 'consulting' && variant !== 'cover'
   const phoneHref=`tel:${(contact.phone||'').replace(/[^+\d]/g,'')}`, emailHref=`mailto:${contact.email||''}`
-  return <div className="doc-contact">{contact.phone&&<a href={phoneHref}><FaPhone/> {contact.phone}</a>}{contact.email&&<a href={emailHref}><FaEnvelope/> {contact.email}</a>}{cloud&&contact.github&&<a href={contact.github} target="_blank" rel="noreferrer"><FaGithub/> {displayUrl(contact.github)}</a>}{contact.linkedin&&<a href={contact.linkedin} target="_blank" rel="noreferrer"><FaLinkedin/> {displayUrl(contact.linkedin)}</a>}{contact.portfolio&&<a href={contact.portfolio} target="_blank" rel="noreferrer"><FaGlobe/> {displayUrl(contact.portfolio)}</a>}</div>
+  return <div className="doc-contact">{contact.phone&&<a href={phoneHref}><FaPhone/> {contact.phone}</a>}{contact.email&&<a href={emailHref}><FaEnvelope/> {contact.email}</a>}{showGithub&&contact.github&&<a href={contact.github} target="_blank" rel="noreferrer"><FaGithub/> {displayUrl(contact.github)}</a>}{contact.linkedin&&<a href={contact.linkedin} target="_blank" rel="noreferrer"><FaLinkedin/> {displayUrl(contact.linkedin)}</a>}{contact.portfolio&&<a href={contact.portfolio} target="_blank" rel="noreferrer"><FaGlobe/> {displayUrl(contact.portfolio)}</a>}</div>
 }
 
 function displayUrl(url=''){return url.replace(/^https?:\/\//,'').replace(/\/$/,'')}
