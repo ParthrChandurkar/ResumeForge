@@ -1,5 +1,7 @@
 import re
 
+from latex import clean_letter_closing
+
 
 def latex_escape(value: object) -> str:
     """Escape model-authored prose without touching template commands."""
@@ -97,11 +99,13 @@ def render_cover_letter(source: str, letter: dict, contact: dict) -> str:
     end_index = source.rfind(r"\end{document}")
     if today_index < 0 or end_index < 0:
         return source
-    prefix = source[:today_index] + r"\today"
+    prefix = source[:today_index] + r"\today" + "\n\\RaggedRight"
     subject = re.sub(r"^(?:\s*re\s*:\s*)+", "", str(letter.get("subject") or ""), flags=re.IGNORECASE).strip()
     evidence = list(letter.get("evidence_sections", []))[:3]
     while len(evidence) < 3:
         evidence.append({"heading": "", "body": ""})
+    name = contact.get('name') or 'Candidate'
+    closing = clean_letter_closing(letter.get('closing'), name)
     body = rf"""
 
 \vspace{{10pt}}
@@ -146,7 +150,7 @@ def render_cover_letter(source: str, letter: dict, contact: dict) -> str:
 
 \vspace{{8pt}}
 
-{latex_escape(letter.get('closing'))}
+{latex_escape(closing)}
 
 \vspace{{16pt}}
 
@@ -154,7 +158,7 @@ Yours sincerely,
 
 \vspace{{20pt}}
 
-\textbf{{{latex_escape(contact.get('name') or 'Candidate')}}}
+\textbf{{{latex_escape(name)}}}
 
 \end{{document}}
 """

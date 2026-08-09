@@ -11,7 +11,7 @@ from google.genai import types
 
 from auth import User, require_user
 from exact_templates import exact_source_path, render_cloud_resume, render_cover_letter
-from latex import cover_letter_tex, resume_tex
+from latex import clean_letter_closing, cover_letter_tex, resume_tex
 from models.schemas import CompanyResearch, GeminiRevisionOutput, GeminiTailoringOutput, HistoryItem, RevisionRequest, ShortMessageOutput, TailorRequest, TailorResult
 from storage import get_bytes, get_manifest, save_manifest
 
@@ -30,6 +30,7 @@ NON-NEGOTIABLE RULES:
 8. When the source resume has a separate bullet-based competency grid, preserve it in resume.competency_bullets instead of flattening it into skill groups.
 9. The resume profile/summary is a professional evidence statement, never an application pitch. Never mention the target company, "seeking an opportunity", "excited to join", admiration, culture fit, or why the candidate wants the employer. Tailor capabilities and evidenced keywords only.
 10. Keep the resume visually full without padding or invention. Preserve every original entry and bullet slot. For the cloud template, write a 55–75 word summary, exactly four skill groups, and evidence-rich bullets of roughly 25–40 words so the supplied one-page layout is used professionally.
+11. Write a complete one-page cover letter of approximately 450–550 words: a 65–85 word opening, three evidence sections with 75–95 word bodies, a 55–75 word motivation paragraph, and a 35–55 word closing paragraph. The closing field contains only the final thank-you paragraph—never a sign-off, candidate name, address, or repeated salutation. The renderer owns "Yours sincerely" and the signature.
 
 Use the response schema exactly. The match score is a realistic 0–100 estimate after tailoring. Missing keywords must only describe genuine gaps that must not be fabricated."""
 
@@ -45,6 +46,7 @@ NON-NEGOTIABLE RULES:
 7. Return both complete documents in the response schema, even when only one document changes.
 8. Resume summary revisions must never mention the target company or contain job-seeking, enthusiasm, admiration, or employer-directed language.
 9. If asked to fill the page or remove blank space, expand existing truthful evidence and ATS-relevant detail within the locked bullet slots; do not alter layout commands or invent facts.
+10. The cover-letter closing field must contain only its final thank-you paragraph. Never include "Yours sincerely", another sign-off, or the candidate's name because the renderer adds the signature.
 
 Return valid structured output and a one-sentence change summary."""
 
@@ -147,6 +149,8 @@ def _restore_template_structure(run: dict, template: dict, user: User, cover_tem
     """Restore link targets and structural details that model output can omit."""
     letter = run.setdefault("cover_letter", {})
     letter["subject"] = _clean_subject(letter.get("subject", ""))
+    contact_name = (letter.get("contact") or run.get("resume", {}).get("contact", {})).get("name", "")
+    letter["closing"] = clean_letter_closing(letter.get("closing", ""), contact_name)
     profile = _layout_profile(user)
     if not profile:
         return run

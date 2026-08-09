@@ -79,10 +79,10 @@ button:active { transform: translateY(1px); }
 .recipient { margin-top: 25px; }
 .recipient p { margin: 0; }
 .cover-paper > h2 { margin: 24px 0 24px; font-size: 16px; font-weight: 700; }
-.cover-paper > p { margin: 0 0 16px; text-align: justify; }
+.cover-paper > p { margin: 0 0 16px; text-align: left; hyphens: none; overflow-wrap: break-word; }
 .letter-proof { margin-bottom: 15px; }
 .letter-proof h3 { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
-.letter-proof p { margin: 0; text-align: justify; }
+.letter-proof p { margin: 0; text-align: left; hyphens: none; overflow-wrap: break-word; }
 .signature { margin-top: 24px; }
 .signature p { margin: 0 0 28px; }
 .signature strong { font-weight: 700; }
@@ -132,6 +132,30 @@ button:active { transform: translateY(1px); }
 .precision-cover .letter-proof h3 { margin-bottom: 10px; font-size: 14.5px; }
 .precision-cover .signature { margin-top: 27px; }
 .precision-cover .signature p { margin-bottom: 27px; }
+
+/* Adaptive one-page rhythm: short letters breathe; long letters remain safely printable. */
+.cover-paper.cover-airy { padding-top: 38px; font-size: 15.2px; line-height: 1.4; }
+.cover-paper.cover-airy .letter-date { margin-top: 34px; }
+.cover-paper.cover-airy .recipient { margin-top: 40px; }
+.cover-paper.cover-airy > h2 { margin: 36px 0; }
+.cover-paper.cover-airy > p { margin-bottom: 24px; }
+.cover-paper.cover-airy .letter-proof { margin-bottom: 24px; }
+.cover-paper.cover-airy .letter-proof h3 { margin-bottom: 10px; }
+.cover-paper.cover-airy .signature { margin-top: 32px; }
+.cover-paper.cover-airy .signature p { margin-bottom: 32px; }
+.cover-paper.cover-balanced { font-size: 14.6px; line-height: 1.3; }
+.cover-paper.cover-balanced .letter-date { margin-top: 27px; }
+.cover-paper.cover-balanced .recipient { margin-top: 32px; }
+.cover-paper.cover-balanced > h2 { margin: 29px 0; }
+.cover-paper.cover-balanced > p, .cover-paper.cover-balanced .letter-proof { margin-bottom: 19px; }
+.cover-paper.cover-dense { padding-top: 27px; font-size: 13.8px; line-height: 1.2; }
+.cover-paper.cover-dense .letter-date { margin-top: 20px; }
+.cover-paper.cover-dense .recipient { margin-top: 23px; }
+.cover-paper.cover-dense > h2 { margin: 21px 0; }
+.cover-paper.cover-dense > p, .cover-paper.cover-dense .letter-proof { margin-bottom: 13px; }
+.cover-paper.cover-dense .letter-proof h3 { margin-bottom: 6px; }
+.cover-paper.cover-dense .signature { margin-top: 19px; }
+.cover-paper.cover-dense .signature p { margin-bottom: 20px; }
 
 @page { size: letter; margin: 0; }
 @media print {

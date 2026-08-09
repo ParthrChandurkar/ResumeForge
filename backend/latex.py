@@ -50,6 +50,15 @@ def safe_url(value: object) -> str:
     return url if url.startswith(("https://", "http://", "mailto:", "tel:")) else ""
 
 
+def clean_letter_closing(value: object, name: object = "") -> str:
+    """Keep the final thank-you paragraph while removing renderer-owned sign-offs."""
+    text = str(value or "").strip()
+    candidate = re.escape(str(name or "").strip())
+    signoff = r"(?:yours\s+sincerely|sincerely|kind\s+regards|best\s+regards|warm\s+regards|regards)"
+    suffix = rf"\s*[,;:]?\s*(?:{candidate}\s*)?$" if candidate else r"\s*[,;:]?\s*(?:[A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){0,4})?\s*$"
+    return re.sub(rf"(?:\s|\n)*{signoff}{suffix}", "", text, flags=re.IGNORECASE).strip()
+
+
 def contact_tex(contact: dict, include_github: bool = True, full_labels: bool = False) -> str:
     """Render only available user contact fields as clickable LaTeX links."""
     fields = []
@@ -166,11 +175,12 @@ def cover_letter_tex(run: dict) -> str:
     parts = [r"""\documentclass[11pt,letterpaper]{article}
 \usepackage[margin=0.55in]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern,hyperref}
+\usepackage{lmodern,hyperref,ragged2e}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{9pt}
 \begin{document}
+\RaggedRight
 """ + r"{\LARGE\bfseries " + esc(name) + r"}\\[3pt]" + "\n" + contact_tex(contact)]
     parts.append(esc(display_date) + r"\\[8pt]")
     parts.append(esc(letter.get("recipient_team")) + r"\\" + esc(letter.get("company")) + r"\\" + esc(letter.get("location")))
@@ -181,6 +191,6 @@ def cover_letter_tex(run: dict) -> str:
     for section in letter.get("evidence_sections", []):
         parts.append(r"\textbf{" + esc(section.get("heading")) + "}\n\n" + esc(section.get("body")))
     parts.append(esc(letter.get("motivation")))
-    parts.append(esc(letter.get("closing")))
+    parts.append(esc(clean_letter_closing(letter.get("closing"), name)))
     parts.append(r"Yours sincerely,\\[14pt]\textbf{" + esc(name) + r"}\end{document}")
     return "\n\n".join(parts)
