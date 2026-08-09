@@ -175,12 +175,14 @@ def cover_letter_tex(run: dict) -> str:
     parts = [r"""\documentclass[11pt,letterpaper]{article}
 \usepackage[margin=0.55in]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern,hyperref,ragged2e}
+\usepackage{lmodern,hyperref,ragged2e,adjustbox}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{9pt}
 \begin{document}
 \RaggedRight
+\begin{adjustbox}{max totalsize={\textwidth}{0.96\textheight},center}
+\begin{minipage}{\textwidth}
 """ + r"{\LARGE\bfseries " + esc(name) + r"}\\[3pt]" + "\n" + contact_tex(contact)]
     parts.append(esc(display_date) + r"\\[8pt]")
     parts.append(esc(letter.get("recipient_team")) + r"\\" + esc(letter.get("company")) + r"\\" + esc(letter.get("location")))
@@ -192,5 +194,5 @@ def cover_letter_tex(run: dict) -> str:
         parts.append(r"\textbf{" + esc(section.get("heading")) + "}\n\n" + esc(section.get("body")))
     parts.append(esc(letter.get("motivation")))
     parts.append(esc(clean_letter_closing(letter.get("closing"), name)))
-    parts.append(r"Yours sincerely,\\[14pt]\textbf{" + esc(name) + r"}\end{document}")
+    parts.append(r"Yours sincerely,\\[14pt]\textbf{" + esc(name) + r"}" + "\n" + r"\end{minipage}" + "\n" + r"\end{adjustbox}" + "\n" + r"\end{document}")
     return "\n\n".join(parts)

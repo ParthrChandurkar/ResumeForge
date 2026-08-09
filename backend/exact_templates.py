@@ -95,6 +95,14 @@ def render_cloud_resume(source: str, resume: dict) -> str:
 
 def render_cover_letter(source: str, letter: dict, contact: dict) -> str:
     """Fill the original cover-letter body while preserving its exact preamble and spacing recipe."""
+    if r"\usepackage{adjustbox}" not in source:
+        source = source.replace(r"\begin{document}", "\\usepackage{adjustbox}\n\n\\begin{document}", 1)
+    if r"\begin{adjustbox}" not in source:
+        source = source.replace(
+            r"\begin{document}",
+            "\\begin{document}\n\\begin{adjustbox}{max totalsize={\\textwidth}{0.96\\textheight},center}\n\\begin{minipage}{\\textwidth}",
+            1,
+        )
     today_index = source.find(r"\today")
     end_index = source.rfind(r"\end{document}")
     if today_index < 0 or end_index < 0:
@@ -159,6 +167,9 @@ Yours sincerely,
 \vspace{{20pt}}
 
 \textbf{{{latex_escape(name)}}}
+
+\end{{minipage}}
+\end{{adjustbox}}
 
 \end{{document}}
 """
